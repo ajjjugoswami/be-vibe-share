@@ -24,14 +24,15 @@ const userSchema = new mongoose.Schema({
   avatarUrl: {
     type: String
   },
-  followersCount: {
-    type: Number,
-    default: 0
-  },
-  followingCount: {
-    type: Number,
-    default: 0
-  },
+  // NOTE: Follow/following features are not needed in v1
+  // followersCount: {
+  //   type: Number,
+  //   default: 0
+  // },
+  // followingCount: {
+  //   type: Number,
+  //   default: 0
+  // },
   playlistCount: {
     type: Number,
     default: 0

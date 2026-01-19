@@ -54,22 +54,24 @@ const getUserByUsername = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // NOTE: Follow/following features are not needed in v1
     // Check if current user is following this user
-    let isFollowing = false;
-    if (req.user) {
-      const follow = await UserFollow.findOne({
-        followerId: req.user._id,
-        followingId: user._id
-      });
-      isFollowing = !!follow;
-    }
+    // let isFollowing = false;
+    // if (req.user) {
+    //   const follow = await UserFollow.findOne({
+    //     followerId: req.user._id,
+    //     followingId: user._id
+    //   });
+    //   isFollowing = !!follow;
+    // }
 
     res.json({
       success: true,
       data: {
         user: {
           ...user.toObject(),
-          isFollowing
+          // NOTE: Follow/following features are not needed in v1
+          // isFollowing
         }
       }
     });
@@ -89,22 +91,24 @@ const getUserById = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // NOTE: Follow/following features are not needed in v1
     // Check if current user is following this user
-    let isFollowing = false;
-    if (req.user) {
-      const follow = await UserFollow.findOne({
-        followerId: req.user._id,
-        followingId: user._id
-      });
-      isFollowing = !!follow;
-    }
+    // let isFollowing = false;
+    // if (req.user) {
+    //   const follow = await UserFollow.findOne({
+    //     followerId: req.user._id,
+    //     followingId: user._id
+    //   });
+    //   isFollowing = !!follow;
+    // }
 
     res.json({
       success: true,
       data: {
         user: {
           ...user.toObject(),
-          isFollowing
+          // NOTE: Follow/following features are not needed in v1
+          // isFollowing
         }
       }
     });
@@ -213,7 +217,8 @@ const getUserPlaylists = async (req, res) => {
   }
 };
 
-// Get user's followers
+// NOTE: Follow/following features are not needed in v1
+/*
 const getUserFollowers = async (req, res) => {
   try {
     const { id } = req.params;
@@ -356,6 +361,7 @@ const unfollowUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to unfollow user' });
   }
 };
+*/
 
 module.exports = {
   getUsers,
@@ -364,8 +370,9 @@ module.exports = {
   updateUser,
   deleteUser,
   getUserPlaylists,
-  getUserFollowers,
-  getUserFollowing,
-  followUser,
-  unfollowUser
+  // NOTE: Follow/following features are not needed in v1
+  // getUserFollowers,
+  // getUserFollowing,
+  // followUser,
+  // unfollowUser
 };
