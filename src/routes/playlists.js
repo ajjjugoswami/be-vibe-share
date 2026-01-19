@@ -10,6 +10,7 @@ const {
   unlikePlaylist,
   savePlaylist,
   unsavePlaylist,
+  getSavedPlaylists,
   createPlaylistSchema,
   updatePlaylistSchema,
   addSongSchema
@@ -30,6 +31,10 @@ const { optionalAuthenticate } = require('../middleware/auth');
 // Playlist routes
 router.get('/', optionalAuthenticate, getPlaylists);
 router.post('/', authenticate, validate(createPlaylistSchema), createPlaylist);
+
+// Get user's saved playlists (must come before /:id route)
+router.get('/saved', authenticate, getSavedPlaylists);
+
 router.get('/:id', getPlaylist);
 router.put('/:id', authenticate, validate(updatePlaylistSchema), updatePlaylist);
 router.delete('/:id', authenticate, deletePlaylist);

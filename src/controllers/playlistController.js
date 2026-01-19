@@ -373,6 +373,50 @@ const unsavePlaylist = async (req, res) => {
   }
 };
 
+// Get user's saved playlists
+const getSavedPlaylists = async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const savedPlaylists = await SavedPlaylist.find({ userId: req.user._id })
+      .populate({
+        path: 'playlistId',
+        populate: { path: 'userId', select: 'username' }
+      })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await SavedPlaylist.countDocuments({ userId: req.user._id });
+
+    // Filter out null playlists (in case some were deleted)
+    const validPlaylists = savedPlaylists
+      .filter(saved => saved.playlistId)
+      .map(saved => ({
+        ...saved.playlistId.toObject(),
+        isSaved: true,
+        isLiked: false // We'll check this if needed
+      }));
+
+    res.json({
+      success: true,
+      data: {
+        playlists: validPlaylists,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get saved playlists error:', error);
+    res.status(500).json({ error: 'Failed to get saved playlists' });
+  }
+};
+
 module.exports = {
   getPlaylists,
   createPlaylist,
@@ -383,6 +427,7 @@ module.exports = {
   unlikePlaylist,
   savePlaylist,
   unsavePlaylist,
+  getSavedPlaylists,
   createPlaylistSchema,
   updatePlaylistSchema,
   addSongSchema
