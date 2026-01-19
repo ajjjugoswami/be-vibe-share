@@ -8,6 +8,9 @@ const mongoose = require('mongoose');
 
 const app = express();
 
+// Trust proxy for rate limiting (important for Vercel deployment)
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 if (process.env.MONGODB_URI) {
   mongoose.connect(process.env.MONGODB_URI)

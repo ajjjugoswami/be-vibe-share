@@ -3,6 +3,12 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const User = require('../models/User');
 
+// Validate required environment variables
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET environment variable is not set!');
+  process.exit(1);
+}
+
 // Validation schemas
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
