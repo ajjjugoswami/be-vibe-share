@@ -24,4 +24,25 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+const optionalAuthenticate = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+      
+      if (user) {
+        req.user = user;
+      }
+    }
+    
+    next();
+  } catch (error) {
+    // Ignore auth errors for optional auth
+    next();
+  }
+};
+
 module.exports = authenticate;
+module.exports.optionalAuthenticate = optionalAuthenticate;
