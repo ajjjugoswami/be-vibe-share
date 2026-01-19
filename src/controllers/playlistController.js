@@ -67,13 +67,35 @@ const getPlaylists = async (req, res) => {
 
     const total = await Playlist.countDocuments(query);
 
-    // Add song count to each playlist
-    const playlistsWithSongCount = await Promise.all(
+    // Add song count and user interaction status to each playlist
+    const playlistsWithDetails = await Promise.all(
       playlists.map(async (playlist) => {
         const songCount = await Song.countDocuments({ playlistId: playlist._id });
+        
+        let isLiked = false;
+        let isSaved = false;
+        
+        if (req.user?._id) {
+          // Check if user has liked this playlist
+          const like = await PlaylistLike.findOne({ 
+            userId: req.user._id, 
+            playlistId: playlist._id 
+          });
+          isLiked = !!like;
+          
+          // Check if user has saved this playlist
+          const saved = await SavedPlaylist.findOne({ 
+            userId: req.user._id, 
+            playlistId: playlist._id 
+          });
+          isSaved = !!saved;
+        }
+        
         return {
           ...playlist.toObject(),
-          songCount
+          songCount,
+          isLiked,
+          isSaved
         };
       })
     );
@@ -81,7 +103,7 @@ const getPlaylists = async (req, res) => {
     res.json({
       success: true,
       data: {
-        playlists: playlistsWithSongCount,
+        playlists: playlistsWithDetails,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

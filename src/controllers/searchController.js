@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Playlist = require('../models/Playlist');
+const PlaylistLike = require('../models/PlaylistLike');
+const SavedPlaylist = require('../models/SavedPlaylist');
 
 // Universal search
 const universalSearch = async (req, res) => {
@@ -53,7 +55,38 @@ const universalSearch = async (req, res) => {
         .sort({ likesCount: -1 });
 
       totalPlaylists = await Playlist.countDocuments(playlistQuery);
-      results.playlists = playlists;
+      
+      // Add user interaction status to each playlist
+      const playlistsWithDetails = await Promise.all(
+        playlists.map(async (playlist) => {
+          let isLiked = false;
+          let isSaved = false;
+          
+          if (req.user?._id) {
+            // Check if user has liked this playlist
+            const like = await PlaylistLike.findOne({ 
+              userId: req.user._id, 
+              playlistId: playlist._id 
+            });
+            isLiked = !!like;
+            
+            // Check if user has saved this playlist
+            const saved = await SavedPlaylist.findOne({ 
+              userId: req.user._id, 
+              playlistId: playlist._id 
+            });
+            isSaved = !!saved;
+          }
+          
+          return {
+            ...playlist.toObject(),
+            isLiked,
+            isSaved
+          };
+        })
+      );
+      
+      results.playlists = playlistsWithDetails;
     }
 
     if (type === 'all' || type === 'tags') {
@@ -181,10 +214,40 @@ const searchPlaylists = async (req, res) => {
 
     const total = await Playlist.countDocuments(query);
 
+    // Add user interaction status to each playlist
+    const playlistsWithDetails = await Promise.all(
+      playlists.map(async (playlist) => {
+        let isLiked = false;
+        let isSaved = false;
+        
+        if (req.user?._id) {
+          // Check if user has liked this playlist
+          const like = await PlaylistLike.findOne({ 
+            userId: req.user._id, 
+            playlistId: playlist._id 
+          });
+          isLiked = !!like;
+          
+          // Check if user has saved this playlist
+          const saved = await SavedPlaylist.findOne({ 
+            userId: req.user._id, 
+            playlistId: playlist._id 
+          });
+          isSaved = !!saved;
+        }
+        
+        return {
+          ...playlist.toObject(),
+          isLiked,
+          isSaved
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        playlists,
+        playlists: playlistsWithDetails,
         meta: {
           total,
           limit: searchLimit,

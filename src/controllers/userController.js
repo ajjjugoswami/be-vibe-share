@@ -1,6 +1,9 @@
 const User = require('../models/User');
 const Playlist = require('../models/Playlist');
 const UserFollow = require('../models/UserFollow');
+const PlaylistLike = require('../models/PlaylistLike');
+const SavedPlaylist = require('../models/SavedPlaylist');
+const Song = require('../models/Song');
 
 // Get users with pagination
 const getUsers = async (req, res) => {
@@ -199,10 +202,43 @@ const getUserPlaylists = async (req, res) => {
 
     const total = await Playlist.countDocuments(query);
 
+    // Add song count and user interaction status to each playlist
+    const playlistsWithDetails = await Promise.all(
+      playlists.map(async (playlist) => {
+        const songCount = await Song.countDocuments({ playlistId: playlist._id });
+        
+        let isLiked = false;
+        let isSaved = false;
+        
+        if (req.user?._id) {
+          // Check if user has liked this playlist
+          const like = await PlaylistLike.findOne({ 
+            userId: req.user._id, 
+            playlistId: playlist._id 
+          });
+          isLiked = !!like;
+          
+          // Check if user has saved this playlist
+          const saved = await SavedPlaylist.findOne({ 
+            userId: req.user._id, 
+            playlistId: playlist._id 
+          });
+          isSaved = !!saved;
+        }
+        
+        return {
+          ...playlist.toObject(),
+          songCount,
+          isLiked,
+          isSaved
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        playlists,
+        playlists: playlistsWithDetails,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
