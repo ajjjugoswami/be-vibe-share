@@ -40,8 +40,8 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// Indexes are automatically created by unique: true
+// userSchema.index({ email: 1 });
+// userSchema.index({ username: 1 });
 
 module.exports = mongoose.model('User', userSchema);
