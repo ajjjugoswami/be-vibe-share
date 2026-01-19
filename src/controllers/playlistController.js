@@ -35,10 +35,19 @@ const getPlaylists = async (req, res) => {
     const { page = 1, limit = 20, user, tag, sort = 'recent' } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = { isPublic: true };
+    let query = {};
 
+    // If a specific user is requested
     if (user) {
       query.userId = user;
+      // If the requesting user is the same as the user whose playlists are being fetched,
+      // show all playlists (public and private). Otherwise, only show public playlists.
+      if (!req.user || req.user._id.toString() !== user) {
+        query.isPublic = true;
+      }
+    } else {
+      // If no specific user, only show public playlists
+      query.isPublic = true;
     }
 
     if (tag) {
