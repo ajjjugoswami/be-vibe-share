@@ -20,7 +20,7 @@ if (process.env.MONGODB_URI) {
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['https://vibe-share-zeta.vercel.app/', 'http://localhost:8080', 'http://localhost:3000','https://vibe-share-zeta.vercel.app'],
+  origin: ['https://vibe-share-zeta.vercel.app/', 'http://localhost:8080', 'http://localhost:3000','https://vibe-share-zeta.vercel.app',"https://lovable.dev","https://lovable.dev/projects/ee257b27-ae33-42d5-b750-9627c12ab5cb", "https://id-preview--ee257b27-ae33-42d5-b750-9627c12ab5cb.lovable.app"],
   credentials: true
 }));
 app.use(morgan('combined'));
