@@ -1,6 +1,7 @@
 const Playlist = require('../models/Playlist');
 const User = require('../models/User');
 const UserFollow = require('../models/UserFollow');
+const Song = require('../models/Song');
 
 // Get feed (personalized if authenticated, public trending if not)
 const getFeed = async (req, res) => {
@@ -40,10 +41,21 @@ const getFeed = async (req, res) => {
       total = await Playlist.countDocuments({ isPublic: true });
     }
 
+    // Add song count to each playlist
+    const playlistsWithSongCount = await Promise.all(
+      playlists.map(async (playlist) => {
+        const songCount = await Song.countDocuments({ playlistId: playlist._id });
+        return {
+          ...playlist.toObject(),
+          songCount
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        playlists,
+        playlists: playlistsWithSongCount,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),

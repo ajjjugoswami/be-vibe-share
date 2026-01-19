@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Playlist = require('../models/Playlist');
 const UserFollow = require('../models/UserFollow');
+const Song = require('../models/Song');
 
 // Get suggested users to follow
 const getSuggestedUsers = async (req, res) => {
@@ -58,10 +59,21 @@ const getTrendingPlaylists = async (req, res) => {
 
     const total = await Playlist.countDocuments({ isPublic: true });
 
+    // Add song count to each playlist
+    const playlistsWithSongCount = await Promise.all(
+      playlists.map(async (playlist) => {
+        const songCount = await Song.countDocuments({ playlistId: playlist._id });
+        return {
+          ...playlist.toObject(),
+          songCount
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        playlists,
+        playlists: playlistsWithSongCount,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
@@ -97,10 +109,21 @@ const getPlaylistsByTag = async (req, res) => {
       tags: { $in: [tag] }
     });
 
+    // Add song count to each playlist
+    const playlistsWithSongCount = await Promise.all(
+      playlists.map(async (playlist) => {
+        const songCount = await Song.countDocuments({ playlistId: playlist._id });
+        return {
+          ...playlist.toObject(),
+          songCount
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        playlists,
+        playlists: playlistsWithSongCount,
         tag,
         pagination: {
           page: parseInt(page),
