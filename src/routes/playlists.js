@@ -25,9 +25,10 @@ const {
 } = require('../controllers/songController');
 const validate = require('../middleware/validation');
 const authenticate = require('../middleware/auth');
+const { optionalAuthenticate } = require('../middleware/auth');
 
 // Playlist routes
-router.get('/', getPlaylists);
+router.get('/', optionalAuthenticate, getPlaylists);
 router.post('/', authenticate, validate(createPlaylistSchema), createPlaylist);
 router.get('/:id', getPlaylist);
 router.put('/:id', authenticate, validate(updatePlaylistSchema), updatePlaylist);
