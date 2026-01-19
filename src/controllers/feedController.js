@@ -3,43 +3,20 @@ const User = require('../models/User');
 const UserFollow = require('../models/UserFollow');
 const Song = require('../models/Song');
 
-// Get feed (personalized if authenticated, public trending if not)
+// Get feed (shows all public playlists like Instagram feed)
 const getFeed = async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    let playlists, total;
-
-    if (req.user) {
-      // Authenticated: Get personalized feed
-      const following = await UserFollow.find({ followerId: req.user._id });
-      const followingIds = following.map(f => f.followingId);
-      followingIds.push(req.user._id);
-
-      playlists = await Playlist.find({
-        userId: { $in: followingIds },
-        isPublic: true
-      })
+    // Always show all public playlists, sorted by creation date (newest first)
+    const playlists = await Playlist.find({ isPublic: true })
       .populate('userId', 'username')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
 
-      total = await Playlist.countDocuments({
-        userId: { $in: followingIds },
-        isPublic: true
-      });
-    } else {
-      // Not authenticated: Get public trending playlists
-      playlists = await Playlist.find({ isPublic: true })
-        .populate('userId', 'username')
-        .skip(skip)
-        .limit(parseInt(limit))
-        .sort({ likesCount: -1, createdAt: -1 });
-
-      total = await Playlist.countDocuments({ isPublic: true });
-    }
+    const total = await Playlist.countDocuments({ isPublic: true });
 
     // Add song count to each playlist
     const playlistsWithSongCount = await Promise.all(
