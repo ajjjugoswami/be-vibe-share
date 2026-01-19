@@ -23,7 +23,7 @@ if (process.env.MONGODB_URI) {
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['https://vibe-share-zeta.vercel.app/', 'http://localhost:8080', 'http://localhost:3000'],
+  origin: ['https://vibe-share-zeta.vercel.app/', 'http://localhost:8080', 'http://localhost:3000','https://vibe-share-zeta.vercel.app'],
   credentials: true
 }));
 app.use(morgan('combined'));
