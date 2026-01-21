@@ -130,9 +130,15 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-passwordHash');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const userObj = user.toObject();
+    // Ensure a stable `id` field exists on the client
+    userObj.id = userObj.id || userObj._id;
+
     res.json({
       success: true,
-      data: { user }
+      data: { user: userObj }
     });
   } catch (error) {
     console.error('Get me error:', error);
