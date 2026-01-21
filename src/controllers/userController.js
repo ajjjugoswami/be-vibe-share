@@ -125,16 +125,43 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { bio, avatarUrl } = req.body;
+    const { bio, avatarUrl, username } = req.body;
 
     // Check if user is updating their own profile
     if (req.user._id.toString() !== id) {
       return res.status(403).json({ error: 'Can only update your own profile' });
     }
 
+    // Validate avatarUrl: only allow our anonymous tokens
+    // Accepted formats: "emoji:<emoji>" or "avatar:<name>"
+    if (avatarUrl) {
+      if (!(avatarUrl.startsWith('emoji:') || avatarUrl.startsWith('avatar:'))) {
+        return res.status(400).json({ error: 'Invalid avatar format' });
+      }
+    }
+
+    // If username is being updated, ensure uniqueness and basic validation
+    if (username) {
+      const usernameTrim = username.trim();
+      const usernameRegex = /^[a-zA-Z0-9_\-]{3,50}$/;
+      if (!usernameRegex.test(usernameTrim)) {
+        return res.status(400).json({ error: 'Username must be 3-50 chars, alphanumeric, underscore or dash' });
+      }
+
+      const existing = await User.findOne({ username: usernameTrim });
+      if (existing && existing._id.toString() !== id) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+    }
+
+    const updates = {};
+    if (bio !== undefined) updates.bio = bio;
+    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+    if (username !== undefined) updates.username = username.trim();
+
     const user = await User.findByIdAndUpdate(
       id,
-      { bio, avatarUrl },
+      updates,
       { new: true, runValidators: true }
     ).select('-passwordHash');
 
