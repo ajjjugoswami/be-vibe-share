@@ -28,7 +28,6 @@ const userSchema = new mongoose.Schema({
     instagram: { type: String },
     twitter: { type: String },
     youtube: { type: String },
-    tiktok: { type: String },
     spotify: { type: String },
     website: { type: String }
   },

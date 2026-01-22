@@ -148,7 +148,7 @@ const updateUser = async (req, res) => {
     // Validate social links
     if (socialLinks) {
       const urlRegex = /^https?:\/\/.+/;
-      const allowedPlatforms = ['instagram', 'twitter', 'youtube', 'tiktok', 'spotify', 'website'];
+      const allowedPlatforms = ['instagram', 'twitter', 'youtube', 'spotify', 'website'];
       
       for (const [platform, url] of Object.entries(socialLinks)) {
         if (!allowedPlatforms.includes(platform)) {
