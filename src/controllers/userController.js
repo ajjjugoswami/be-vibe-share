@@ -4,6 +4,8 @@ const UserFollow = require('../models/UserFollow');
 const PlaylistLike = require('../models/PlaylistLike');
 const SavedPlaylist = require('../models/SavedPlaylist');
 const Song = require('../models/Song');
+const cloudinary = require('../config/cloudinary');
+const multer = require('multer');
 
 // Get users with pagination
 const getUsers = async (req, res) => {
@@ -132,10 +134,13 @@ const updateUser = async (req, res) => {
       return res.status(403).json({ error: 'Can only update your own profile' });
     }
 
-    // Validate avatarUrl: only allow our anonymous tokens
-    // Accepted formats: "emoji:<emoji>" or "avatar:<name>"
+    // Validate avatarUrl: allow our anonymous tokens or Cloudinary URLs
+    // Accepted formats: "emoji:<emoji>", "avatar:<name>", or URLs starting with "https://res.cloudinary.com/"
     if (avatarUrl) {
-      if (!(avatarUrl.startsWith('emoji:') || avatarUrl.startsWith('avatar:'))) {
+      const isValidFormat = avatarUrl.startsWith('emoji:') || 
+                           avatarUrl.startsWith('avatar:') || 
+                           avatarUrl.startsWith('https://res.cloudinary.com/');
+      if (!isValidFormat) {
         return res.status(400).json({ error: 'Invalid avatar format' });
       }
     }
@@ -426,6 +431,60 @@ const unfollowUser = async (req, res) => {
 };
 */
 
+// Upload profile picture
+const uploadProfilePicture = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload_stream({
+      folder: 'profile-pictures',
+      width: 400,
+      height: 400,
+      crop: 'fill',
+      gravity: 'face'
+    }, async (error, result) => {
+      if (error) {
+        console.error('Cloudinary upload error:', error);
+        return res.status(500).json({ error: 'Failed to upload image' });
+      }
+
+      try {
+        // Update user's avatarUrl
+        const user = await User.findByIdAndUpdate(
+          req.user._id,
+          { avatarUrl: result.secure_url },
+          { new: true, runValidators: true }
+        ).select('-passwordHash');
+
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+          success: true,
+          data: {
+            user,
+            imageUrl: result.secure_url
+          }
+        });
+      } catch (dbError) {
+        console.error('Database update error:', dbError);
+        res.status(500).json({ error: 'Failed to update profile' });
+      }
+    });
+
+    // Pipe the buffer to Cloudinary
+    const bufferStream = require('stream').Readable.from(req.file.buffer);
+    bufferStream.pipe(result);
+  } catch (error) {
+    console.error('Upload profile picture error:', error);
+    res.status(500).json({ error: 'Failed to upload profile picture' });
+  }
+};
+
 module.exports = {
   getUsers,
   getUserByUsername,
@@ -433,6 +492,7 @@ module.exports = {
   updateUser,
   deleteUser,
   getUserPlaylists,
+  uploadProfilePicture,
   // NOTE: Follow/following features are not needed in v1
   // getUserFollowers,
   // getUserFollowing,
