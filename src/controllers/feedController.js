@@ -14,7 +14,7 @@ const getFeed = async (req, res) => {
 
     // Always show all public playlists, sorted by creation date (newest first)
     const playlists = await Playlist.find({ isPublic: true })
-      .populate('userId', 'username')
+      .populate('userId', 'username avatarUrl')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
@@ -47,6 +47,8 @@ const getFeed = async (req, res) => {
         
         return {
           ...playlist.toObject(),
+          username: playlist.userId.username,
+          userAvatar: playlist.userId.avatarUrl,
           songCount,
           isLiked,
           isSaved

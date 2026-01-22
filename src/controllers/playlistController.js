@@ -60,7 +60,7 @@ const getPlaylists = async (req, res) => {
     }
 
     const playlists = await Playlist.find(query)
-      .populate('userId', 'username')
+      .populate('userId', 'username avatarUrl')
       .skip(skip)
       .limit(parseInt(limit))
       .sort(sortOption);
@@ -93,6 +93,8 @@ const getPlaylists = async (req, res) => {
         
         return {
           ...playlist.toObject(),
+          username: playlist.userId.username,
+          userAvatar: playlist.userId.avatarUrl,
           songCount,
           isLiked,
           isSaved
@@ -139,7 +141,7 @@ const createPlaylist = async (req, res) => {
     await User.findByIdAndUpdate(userId, { $inc: { playlistCount: 1 } });
 
     // Populate user info
-    await playlist.populate('userId', 'username');
+    await playlist.populate('userId', 'username avatarUrl');
 
     console.log('[PLAYLIST_CREATED]', { playlistId: playlist._id, userId, timestamp: new Date() });
 
@@ -157,7 +159,7 @@ const createPlaylist = async (req, res) => {
 const getPlaylist = async (req, res) => {
   try {
     const { id } = req.params;
-    const playlist = await Playlist.findById(id).populate('userId', 'username');
+    const playlist = await Playlist.findById(id).populate('userId', 'username avatarUrl');
 
     if (!playlist) {
       return res.status(404).json({ error: 'Playlist not found' });
@@ -219,7 +221,7 @@ const updatePlaylist = async (req, res) => {
       id,
       updates,
       { new: true, runValidators: true }
-    ).populate('userId', 'username');
+    ).populate('userId', 'username avatarUrl');
 
     res.json({
       success: true,
@@ -404,7 +406,7 @@ const getSavedPlaylists = async (req, res) => {
     const savedPlaylists = await SavedPlaylist.find({ userId: req.user._id })
       .populate({
         path: 'playlistId',
-        populate: { path: 'userId', select: 'username' }
+        populate: { path: 'userId', select: 'username avatarUrl' }
       })
       .skip(skip)
       .limit(parseInt(limit))

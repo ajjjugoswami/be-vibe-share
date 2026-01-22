@@ -55,7 +55,7 @@ const getTrendingPlaylists = async (req, res) => {
     const userId = req.user?._id;
 
     const playlists = await Playlist.find({ isPublic: true })
-      .populate('userId', 'username')
+      .populate('userId', 'username avatarUrl')
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ likesCount: -1, createdAt: -1 });
@@ -88,6 +88,8 @@ const getTrendingPlaylists = async (req, res) => {
         
         return {
           ...playlist.toObject(),
+          username: playlist.userId.username,
+          userAvatar: playlist.userId.avatarUrl,
           songCount,
           isLiked,
           isSaved
@@ -124,7 +126,7 @@ const getPlaylistsByTag = async (req, res) => {
       isPublic: true,
       tags: { $in: [tag] }
     })
-    .populate('userId', 'username')
+    .populate('userId', 'username avatarUrl')
     .skip(skip)
     .limit(parseInt(limit))
     .sort({ likesCount: -1, createdAt: -1 });
@@ -140,6 +142,8 @@ const getPlaylistsByTag = async (req, res) => {
         const songCount = await Song.countDocuments({ playlistId: playlist._id });
         return {
           ...playlist.toObject(),
+          username: playlist.userId.username,
+          userAvatar: playlist.userId.avatarUrl,
           songCount
         };
       })
