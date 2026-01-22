@@ -13,6 +13,7 @@ const {
   unsavePlaylist,
   getSavedPlaylists,
   uploadPlaylistThumbnail,
+  removePlaylistThumbnail,
   createPlaylistSchema,
   updatePlaylistSchema,
   addSongSchema
@@ -55,6 +56,7 @@ router.get('/saved', authenticate, getSavedPlaylists);
 router.get('/:id', getPlaylist);
 router.put('/:id', authenticate, validate(updatePlaylistSchema), updatePlaylist);
 router.post('/:id/thumbnail', authenticate, upload.single('thumbnail'), uploadPlaylistThumbnail);
+router.delete('/:id/thumbnail', authenticate, removePlaylistThumbnail);
 router.delete('/:id', authenticate, deletePlaylist);
 router.post('/:id/like', authenticate, likePlaylist);
 router.delete('/:id/like', authenticate, unlikePlaylist);

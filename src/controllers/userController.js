@@ -455,7 +455,7 @@ const uploadProfilePicture = async (req, res) => {
     }
 
     // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload_stream({
+    const uploadStream = cloudinary.uploader.upload_stream({
       folder: 'profile-pictures',
       width: 400,
       height: 400,
@@ -494,7 +494,7 @@ const uploadProfilePicture = async (req, res) => {
 
     // Pipe the buffer to Cloudinary
     const bufferStream = require('stream').Readable.from(req.file.buffer);
-    bufferStream.pipe(result);
+    bufferStream.pipe(uploadStream);
   } catch (error) {
     console.error('Upload profile picture error:', error);
     res.status(500).json({ error: 'Failed to upload profile picture' });

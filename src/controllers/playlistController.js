@@ -234,6 +234,59 @@ const updatePlaylist = async (req, res) => {
   }
 };
 
+// Remove playlist thumbnail
+const removePlaylistThumbnail = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if playlist exists and user owns it
+    const playlist = await Playlist.findById(id);
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    if (playlist.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Can only remove thumbnail from your own playlist' });
+    }
+
+    // Delete thumbnail from Cloudinary if it exists
+    if (playlist.thumbnailUrl && playlist.thumbnailUrl.includes('cloudinary.com')) {
+      try {
+        // Extract public_id from Cloudinary URL
+        const urlParts = playlist.thumbnailUrl.split('/');
+        const publicIdWithExtension = urlParts[urlParts.length - 1];
+        const publicId = `playlist-thumbnails/${publicIdWithExtension.split('.')[0]}`;
+        
+        await cloudinary.uploader.destroy(publicId);
+      } catch (cloudinaryError) {
+        console.error('Error deleting thumbnail from Cloudinary:', cloudinaryError);
+        // Don't fail the entire operation if Cloudinary deletion fails
+      }
+    }
+
+    // Update playlist's thumbnailUrl to null
+    const updatedPlaylist = await Playlist.findByIdAndUpdate(
+      id,
+      { thumbnailUrl: null },
+      { new: true, runValidators: true }
+    ).populate('userId', 'username avatarUrl');
+
+    if (!updatedPlaylist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        playlist: updatedPlaylist
+      }
+    });
+  } catch (error) {
+    console.error('Remove playlist thumbnail error:', error);
+    res.status(500).json({ error: 'Failed to remove playlist thumbnail' });
+  }
+};
+
 // Delete playlist
 const deletePlaylist = async (req, res) => {
   try {
@@ -477,7 +530,7 @@ const uploadPlaylistThumbnail = async (req, res) => {
     }
 
     // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload_stream({
+    const uploadStream = cloudinary.uploader.upload_stream({
       folder: 'playlist-thumbnails',
       width: 800,
       height: 800,
@@ -515,7 +568,7 @@ const uploadPlaylistThumbnail = async (req, res) => {
 
     // Pipe the buffer to Cloudinary
     const bufferStream = require('stream').Readable.from(req.file.buffer);
-    bufferStream.pipe(result);
+    bufferStream.pipe(uploadStream);
   } catch (error) {
     console.error('Upload playlist thumbnail error:', error);
     res.status(500).json({ error: 'Failed to upload playlist thumbnail' });
@@ -534,6 +587,7 @@ module.exports = {
   unsavePlaylist,
   getSavedPlaylists,
   uploadPlaylistThumbnail,
+  removePlaylistThumbnail,
   createPlaylistSchema,
   updatePlaylistSchema,
   addSongSchema
