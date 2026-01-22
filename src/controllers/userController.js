@@ -275,7 +275,18 @@ const getUserPlaylists = async (req, res) => {
         }
         
         return {
-          ...playlist.toObject(),
+          _id: playlist._id,
+          title: playlist.title,
+          description: playlist.description,
+          coverGradient: playlist.coverGradient,
+          thumbnailUrl: playlist.thumbnailUrl,
+          tags: playlist.tags,
+          likesCount: playlist.likesCount,
+          isPublic: playlist.isPublic,
+          createdAt: playlist.createdAt,
+          updatedAt: playlist.updatedAt,
+          username: playlist.userId.username,
+          userAvatar: playlist.userId.avatarUrl,
           songCount,
           isLiked,
           isSaved

@@ -198,7 +198,21 @@ const getPlaylist = async (req, res) => {
       success: true,
       data: {
         playlist: {
-          ...playlist.toObject(),
+          _id: playlist._id,
+          title: playlist.title,
+          description: playlist.description,
+          coverGradient: playlist.coverGradient,
+          thumbnailUrl: playlist.thumbnailUrl,
+          tags: playlist.tags,
+          likesCount: playlist.likesCount,
+          isPublic: playlist.isPublic,
+          createdAt: playlist.createdAt,
+          updatedAt: playlist.updatedAt,
+          user: {
+            _id: playlist.userId._id,
+            username: playlist.userId.username,
+            avatarUrl: playlist.userId.avatarUrl
+          },
           songs,
           isLiked,
           isSaved
