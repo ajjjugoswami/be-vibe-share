@@ -24,6 +24,14 @@ const userSchema = new mongoose.Schema({
   avatarUrl: {
     type: String
   },
+  socialLinks: {
+    instagram: { type: String },
+    twitter: { type: String },
+    youtube: { type: String },
+    tiktok: { type: String },
+    spotify: { type: String },
+    website: { type: String }
+  },
   // NOTE: Follow/following features are not needed in v1
   // followersCount: {
   //   type: Number,

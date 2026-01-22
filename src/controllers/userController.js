@@ -127,7 +127,7 @@ const getUserById = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { bio, avatarUrl, username } = req.body;
+    const { bio, avatarUrl, username, socialLinks } = req.body;
 
     // Check if user is updating their own profile
     if (req.user._id.toString() !== id) {
@@ -142,6 +142,21 @@ const updateUser = async (req, res) => {
                            avatarUrl.startsWith('https://res.cloudinary.com/');
       if (!isValidFormat) {
         return res.status(400).json({ error: 'Invalid avatar format' });
+      }
+    }
+
+    // Validate social links
+    if (socialLinks) {
+      const urlRegex = /^https?:\/\/.+/;
+      const allowedPlatforms = ['instagram', 'twitter', 'youtube', 'tiktok', 'spotify', 'website'];
+      
+      for (const [platform, url] of Object.entries(socialLinks)) {
+        if (!allowedPlatforms.includes(platform)) {
+          return res.status(400).json({ error: `Invalid social platform: ${platform}` });
+        }
+        if (url && !urlRegex.test(url)) {
+          return res.status(400).json({ error: `Invalid URL format for ${platform}` });
+        }
       }
     }
 
@@ -163,6 +178,7 @@ const updateUser = async (req, res) => {
     if (bio !== undefined) updates.bio = bio;
     if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
     if (username !== undefined) updates.username = username.trim();
+    if (socialLinks !== undefined) updates.socialLinks = socialLinks;
 
     const user = await User.findByIdAndUpdate(
       id,
