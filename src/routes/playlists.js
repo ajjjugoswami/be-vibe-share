@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const {
   getPlaylists,
   createPlaylist,
@@ -11,6 +12,7 @@ const {
   savePlaylist,
   unsavePlaylist,
   getSavedPlaylists,
+  uploadPlaylistThumbnail,
   createPlaylistSchema,
   updatePlaylistSchema,
   addSongSchema
@@ -28,6 +30,21 @@ const validate = require('../middleware/validation');
 const authenticate = require('../middleware/auth');
 const { optionalAuthenticate } = require('../middleware/auth');
 
+// Configure multer for thumbnail uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
+
 // Playlist routes
 router.get('/', optionalAuthenticate, getPlaylists);
 router.post('/', authenticate, validate(createPlaylistSchema), createPlaylist);
@@ -37,6 +54,7 @@ router.get('/saved', authenticate, getSavedPlaylists);
 
 router.get('/:id', getPlaylist);
 router.put('/:id', authenticate, validate(updatePlaylistSchema), updatePlaylist);
+router.post('/:id/thumbnail', authenticate, upload.single('thumbnail'), uploadPlaylistThumbnail);
 router.delete('/:id', authenticate, deletePlaylist);
 router.post('/:id/like', authenticate, likePlaylist);
 router.delete('/:id/like', authenticate, unlikePlaylist);

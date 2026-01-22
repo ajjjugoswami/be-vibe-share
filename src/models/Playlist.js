@@ -19,6 +19,9 @@ const playlistSchema = new mongoose.Schema({
     default: 'from-purple-800 to-pink-900',
     maxlength: 100
   },
+  thumbnailUrl: {
+    type: String
+  },
   tags: [{
     type: String
   }],
