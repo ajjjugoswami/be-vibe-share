@@ -522,7 +522,7 @@ const getSavedPlaylists = async (req, res) => {
           
           return {
             ...saved.playlistId.toObject(),
-            songsCount: songCount,
+            songCount: songCount,
             isSaved: true,
             isLiked
           };
