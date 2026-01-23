@@ -34,8 +34,13 @@ const universalSearch = async (req, res) => {
         .limit(searchLimit)
         .sort({ followersCount: -1 });
 
+      const usersWithId = users.map(user => ({
+        id: user._id,
+        ...user.toObject()
+      }));
+
       totalUsers = await User.countDocuments(userQuery);
-      results.users = users;
+      results.users = usersWithId;
     }
 
     if (type === 'all' || type === 'playlists') {
@@ -44,7 +49,7 @@ const universalSearch = async (req, res) => {
         $or: [
           { title: { $regex: q, $options: 'i' } },
           { description: { $regex: q, $options: 'i' } },
-          { tags: { $in: [new RegExp(q, 'i')] } }
+          { tags: { $elemMatch: { $regex: q, $options: 'i' } } }
         ]
       };
 
@@ -59,6 +64,8 @@ const universalSearch = async (req, res) => {
       // Add user interaction status to each playlist
       const playlistsWithDetails = await Promise.all(
         playlists.map(async (playlist) => {
+          const songCount = await Song.countDocuments({ playlistId: playlist._id });
+          
           let isLiked = false;
           let isSaved = false;
           
@@ -79,7 +86,9 @@ const universalSearch = async (req, res) => {
           }
           
           return {
+            id: playlist._id,
             ...playlist.toObject(),
+            songCount,
             isLiked,
             isSaved
           };
@@ -158,12 +167,17 @@ const searchUsers = async (req, res) => {
       .limit(searchLimit)
       .sort({ followersCount: -1 });
 
+    const usersWithId = users.map(user => ({
+      id: user._id,
+      ...user.toObject()
+    }));
+
     const total = await User.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        users,
+        users: usersWithId,
         meta: {
           total,
           limit: searchLimit,
@@ -195,7 +209,7 @@ const searchPlaylists = async (req, res) => {
       $or: [
         { title: { $regex: q, $options: 'i' } },
         { description: { $regex: q, $options: 'i' } },
-        { tags: { $in: [new RegExp(q, 'i')] } }
+        { tags: { $elemMatch: { $regex: q, $options: 'i' } } }
       ]
     };
 
@@ -217,6 +231,8 @@ const searchPlaylists = async (req, res) => {
     // Add user interaction status to each playlist
     const playlistsWithDetails = await Promise.all(
       playlists.map(async (playlist) => {
+        const songCount = await Song.countDocuments({ playlistId: playlist._id });
+        
         let isLiked = false;
         let isSaved = false;
         
@@ -237,7 +253,9 @@ const searchPlaylists = async (req, res) => {
         }
         
         return {
+          id: playlist._id,
           ...playlist.toObject(),
+          songCount,
           isLiked,
           isSaved
         };
