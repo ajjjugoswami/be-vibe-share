@@ -506,14 +506,28 @@ const getSavedPlaylists = async (req, res) => {
 
     const total = await SavedPlaylist.countDocuments({ userId: req.user._id });
 
-    // Filter out null playlists (in case some were deleted)
-    const validPlaylists = savedPlaylists
-      .filter(saved => saved.playlistId)
-      .map(saved => ({
-        ...saved.playlistId.toObject(),
-        isSaved: true,
-        isLiked: false // We'll check this if needed
-      }));
+    // Filter out null playlists (in case some were deleted) and add song count
+    const validPlaylists = await Promise.all(
+      savedPlaylists
+        .filter(saved => saved.playlistId)
+        .map(async (saved) => {
+          const songCount = await Song.countDocuments({ playlistId: saved.playlistId._id });
+          
+          // Check if user has liked this playlist
+          const like = await PlaylistLike.findOne({ 
+            userId: req.user._id, 
+            playlistId: saved.playlistId._id 
+          });
+          const isLiked = !!like;
+          
+          return {
+            ...saved.playlistId.toObject(),
+            songsCount: songCount,
+            isSaved: true,
+            isLiked
+          };
+        })
+    );
 
     res.json({
       success: true,
