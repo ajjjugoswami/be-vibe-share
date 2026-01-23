@@ -4,6 +4,7 @@ const UserFollow = require('../models/UserFollow');
 const Song = require('../models/Song');
 const PlaylistLike = require('../models/PlaylistLike');
 const SavedPlaylist = require('../models/SavedPlaylist');
+const mongoose = require('mongoose');
 
 // Get feed (shows all public playlists like Instagram feed)
 const getFeed = async (req, res) => {
@@ -11,6 +12,11 @@ const getFeed = async (req, res) => {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
     const userId = req.user?._id;
+
+    // Ensure database connection for serverless
+    if (mongoose.connection.readyState !== 1) {
+      await mongoose.connect(process.env.MONGODB_URI);
+    }
 
     // Always show all public playlists, sorted by creation date (newest first)
     const playlists = await Playlist.find({ isPublic: true })
