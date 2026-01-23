@@ -6,6 +6,25 @@ const Song = require('../models/Song');
 const PlaylistLike = require('../models/PlaylistLike');
 const SavedPlaylist = require('../models/SavedPlaylist');
 
+// Simple in-memory cache with TTL
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCacheKey = (type, q, limit, offset) => `${type}-${q}-${limit}-${offset}`;
+
+const getCached = (key) => {
+  const item = cache.get(key);
+  if (item && Date.now() - item.timestamp < CACHE_TTL) {
+    return item.data;
+  }
+  cache.delete(key);
+  return null;
+};
+
+const setCached = (key, data) => {
+  cache.set(key, { data, timestamp: Date.now() });
+};
+
 // Universal search
 const universalSearch = async (req, res) => {
   try {
@@ -17,6 +36,13 @@ const universalSearch = async (req, res) => {
 
     const searchLimit = Math.min(parseInt(limit), 20);
     const searchOffset = parseInt(offset);
+    const cacheKey = getCacheKey(type, q, searchLimit, searchOffset);
+
+    // Check cache first
+    const cachedResult = getCached(cacheKey);
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
 
     let results = { users: [], playlists: [], tags: [] };
     let totalUsers = 0, totalPlaylists = 0, totalTags = 0;
@@ -125,7 +151,7 @@ const universalSearch = async (req, res) => {
       results.tags = tags;
     }
 
-    res.json({
+    const responseData = {
       success: true,
       data: {
         ...results,
@@ -136,7 +162,12 @@ const universalSearch = async (req, res) => {
           totalTags
         }
       }
-    });
+    };
+
+    // Cache the result
+    setCached(cacheKey, responseData);
+
+    res.json(responseData);
   } catch (error) {
     console.error('Universal search error:', error);
     res.status(500).json({ error: 'Search failed' });
