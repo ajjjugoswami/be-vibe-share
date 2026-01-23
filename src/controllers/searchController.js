@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const Playlist = require('../models/Playlist');
+const Song = require('../models/Song');
 const PlaylistLike = require('../models/PlaylistLike');
 const SavedPlaylist = require('../models/SavedPlaylist');
 
