@@ -6,6 +6,8 @@ const {
   getMe,
   refresh,
   logout,
+  googleAuth,
+  googleAuthCallback,
   registerSchema,
   loginSchema
 } = require('../controllers/authController');
@@ -18,5 +20,9 @@ router.post('/login', validate(loginSchema), login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 router.get('/me', authenticate, getMe);
+
+// Google OAuth routes
+router.get('/google', googleAuth);
+router.get('/google/callback', googleAuthCallback);
 
 module.exports = router;

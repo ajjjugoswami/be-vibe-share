@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
+const passport = require('../config/passport');
 const User = require('../models/User');
 
 // Validate required environment variables
@@ -172,12 +173,39 @@ const logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 };
 
+// Google OAuth
+const googleAuth = (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.status(500).json({ error: 'Google OAuth not configured' });
+  }
+  passport.authenticate('google', {
+    scope: ['profile', 'email']
+  })(req, res, next);
+};
+
+const googleAuthCallback = (req, res) => {
+  // This will be called after Google authentication
+  // The user will be available in req.user
+  const user = req.user;
+
+  // Generate tokens for the authenticated user
+  const { accessToken, refreshToken } = generateTokens(user._id);
+
+  // Redirect to frontend with tokens
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const redirectUrl = `${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`;
+
+  res.redirect(redirectUrl);
+};
+
 module.exports = {
   register,
   login,
   getMe,
   refresh,
   logout,
+  googleAuth,
+  googleAuthCallback,
   registerSchema,
   loginSchema
 };
