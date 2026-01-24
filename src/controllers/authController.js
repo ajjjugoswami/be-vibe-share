@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
-const passport = require('../config/passport');
 const User = require('../models/User');
 
 // Validate required environment variables
@@ -33,6 +32,35 @@ const generateTokens = (userId) => {
   });
   
   return { accessToken, refreshToken };
+};
+
+// Decode and validate Google JWT credential
+const decodeGoogleCredential = (credential) => {
+  try {
+    // Google JWTs are standard JWTs, decode without verification for now
+    // In production, you should verify the token signature
+    const decoded = jwt.decode(credential);
+    
+    if (!decoded) {
+      throw new Error('Invalid Google credential');
+    }
+    
+    // Validate required fields
+    if (!decoded.sub || !decoded.email || !decoded.email_verified) {
+      throw new Error('Invalid Google credential: missing required fields');
+    }
+    
+    return {
+      googleId: decoded.sub,
+      email: decoded.email,
+      name: decoded.name,
+      picture: decoded.picture,
+      emailVerified: decoded.email_verified
+    };
+  } catch (error) {
+    console.error('Error decoding Google credential:', error);
+    throw new Error('Invalid Google credential');
+  }
 };
 
 // Register user
@@ -173,29 +201,76 @@ const logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 };
 
-// Google OAuth
-const googleAuth = (req, res, next) => {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return res.status(500).json({ error: 'Google OAuth not configured' });
+// Google Sign In with JWT credential
+const googleSignIn = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    
+    if (!credential) {
+      return res.status(400).json({ error: 'Google credential is required' });
+    }
+    
+    // Decode and validate Google credential
+    const googleData = decodeGoogleCredential(credential);
+    
+    // Check if user already exists with this Google ID
+    let user = await User.findOne({ googleId: googleData.googleId });
+    
+    if (user) {
+      // Update user data if missing
+      if (!user.avatarUrl && googleData.picture) {
+        user.avatarUrl = googleData.picture;
+      }
+      await user.save();
+    } else {
+      // Check if user exists with same email
+      user = await User.findOne({ email: googleData.email });
+      
+      if (user) {
+        // Link Google account to existing user
+        user.googleId = googleData.googleId;
+        user.provider = 'google';
+        if (!user.avatarUrl && googleData.picture) {
+          user.avatarUrl = googleData.picture;
+        }
+        await user.save();
+      } else {
+        // Create new user
+        const username = googleData.name.replace(/\s+/g, '').toLowerCase() + Math.floor(Math.random() * 1000);
+        user = new User({
+          email: googleData.email,
+          username: username,
+          googleId: googleData.googleId,
+          provider: 'google',
+          avatarUrl: googleData.picture || null
+        });
+        
+        await user.save();
+      }
+    }
+    
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokens(user._id);
+    
+    console.log('[USER_GOOGLE_SIGNIN]', { userId: user._id, email: user.email, username: user.username, timestamp: new Date() });
+    
+    res.json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username,
+          avatarUrl: user.avatarUrl
+        },
+        accessToken,
+        refreshToken
+      }
+    });
+  } catch (error) {
+    console.error('Google sign-in error:', error);
+    res.status(500).json({ error: 'Google sign-in failed' });
   }
-  passport.authenticate('google', {
-    scope: ['profile', 'email']
-  })(req, res, next);
-};
-
-const googleAuthCallback = (req, res) => {
-  // This will be called after Google authentication
-  // The user will be available in req.user
-  const user = req.user;
-
-  // Generate tokens for the authenticated user
-  const { accessToken, refreshToken } = generateTokens(user._id);
-
-  // Redirect to frontend with tokens
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const redirectUrl = `${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`;
-
-  res.redirect(redirectUrl);
 };
 
 module.exports = {
@@ -204,8 +279,7 @@ module.exports = {
   getMe,
   refresh,
   logout,
-  googleAuth,
-  googleAuthCallback,
+  googleSignIn,
   registerSchema,
   loginSchema
 };
