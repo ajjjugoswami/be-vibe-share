@@ -88,8 +88,7 @@ const getTrendingPlaylists = async (req, res) => {
         
         return {
           ...playlist.toObject(),
-          username: playlist.userId.username,
-          userAvatar: playlist.userId.avatarUrl,
+          username: playlist.userId.username,          userAvatar: playlist.userId.avatarUrl,
           songCount,
           isLiked,
           isSaved
@@ -142,8 +141,7 @@ const getPlaylistsByTag = async (req, res) => {
         const songCount = await Song.countDocuments({ playlistId: playlist._id });
         return {
           ...playlist.toObject(),
-          username: playlist.userId.username,
-          userAvatar: playlist.userId.avatarUrl,
+          username: playlist.userId.username,          userAvatar: playlist.userId.avatarUrl,
           songCount
         };
       })

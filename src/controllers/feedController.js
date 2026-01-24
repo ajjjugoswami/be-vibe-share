@@ -53,8 +53,7 @@ const getFeed = async (req, res) => {
         
         return {
           ...playlist.toObject(),
-          username: playlist.userId.username,
-          userAvatar: playlist.userId.avatarUrl,
+          username: playlist.userId.username,          userAvatar: playlist.userId.avatarUrl,
           songCount,
           isLiked,
           isSaved

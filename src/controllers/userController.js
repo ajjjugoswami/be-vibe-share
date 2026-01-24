@@ -134,14 +134,11 @@ const updateUser = async (req, res) => {
       return res.status(403).json({ error: 'Can only update your own profile' });
     }
 
-    // Validate avatarUrl: allow our anonymous tokens or Cloudinary URLs
-    // Accepted formats: "emoji:<emoji>", "avatar:<name>", or URLs starting with "https://res.cloudinary.com/"
+    // Validate avatarUrl: only allow Cloudinary URLs
     if (avatarUrl) {
-      const isValidFormat = avatarUrl.startsWith('emoji:') || 
-                           avatarUrl.startsWith('avatar:') || 
-                           avatarUrl.startsWith('https://res.cloudinary.com/');
+      const isValidFormat = avatarUrl.startsWith('https://res.cloudinary.com/');
       if (!isValidFormat) {
-        return res.status(400).json({ error: 'Invalid avatar format' });
+        return res.status(400).json({ error: 'Invalid avatar format - only uploaded images are allowed' });
       }
     }
 
