@@ -21,10 +21,12 @@ const {
 const {
   getPlaylistSongs,
   addSong,
+  addSongs,
   updateSong,
   deleteSong,
   reorderSongs,
   updateSongSchema,
+  addSongsSchema,
   reorderSongsSchema
 } = require('../controllers/songController');
 const validate = require('../middleware/validation');
@@ -66,6 +68,7 @@ router.delete('/:id/save', authenticate, unsavePlaylist);
 // Song routes
 router.get('/:id/songs', getPlaylistSongs);
 router.post('/:id/songs', authenticate, validate(addSongSchema), addSong);
+router.post('/:id/songs/batch', authenticate, validate(addSongsSchema), addSongs);
 router.put('/songs/:id', authenticate, validate(updateSongSchema), updateSong);
 router.delete('/songs/:id', authenticate, deleteSong);
 router.put('/:id/songs/reorder', authenticate, validate(reorderSongsSchema), reorderSongs);

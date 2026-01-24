@@ -21,6 +21,17 @@ const reorderSongsSchema = Joi.object({
   ).required()
 });
 
+const addSongsSchema = Joi.object({
+  songs: Joi.array().items(
+    Joi.object({
+      title: Joi.string().min(1).max(255).required(),
+      artist: Joi.string().min(1).max(255).required(),
+      url: Joi.string().uri().required(),
+      platform: Joi.string().min(1).max(50)
+    })
+  ).min(1).required()
+});
+
 // Get songs in playlist
 const getPlaylistSongs = async (req, res) => {
   try {
@@ -208,12 +219,72 @@ const reorderSongs = async (req, res) => {
   }
 };
 
+// Add multiple songs to playlist
+const addSongs = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { songs } = req.body;
+
+    // Check if playlist exists and user owns it
+    const playlist = await Playlist.findById(id);
+    if (!playlist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+
+    if (playlist.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Can only add songs to your own playlists' });
+    }
+
+    // Get the next position
+    const lastSong = await Song.findOne({ playlistId: id }).sort({ position: -1 });
+    let nextPosition = lastSong ? lastSong.position + 1 : 1;
+
+    // Process songs in parallel for better performance
+    const songPromises = songs.map(async (songData) => {
+      const { title, artist, url, platform: providedPlatform } = songData;
+
+      // Auto-detect platform if not provided
+      const platform = providedPlatform || detectPlatform(url);
+
+      // Fetch thumbnail
+      const thumbnail = await fetchThumbnail(url, platform);
+
+      // Create song
+      const song = new Song({
+        playlistId: id,
+        title,
+        artist,
+        url,
+        platform,
+        thumbnail,
+        position: nextPosition++
+      });
+
+      return song.save();
+    });
+
+    const savedSongs = await Promise.all(songPromises);
+
+    console.log('[SONGS_ADDED]', { playlistId: id, songCount: savedSongs.length, timestamp: new Date() });
+
+    res.status(201).json({
+      success: true,
+      data: { songs: savedSongs }
+    });
+  } catch (error) {
+    console.error('Add songs error:', error);
+    res.status(500).json({ error: 'Failed to add songs' });
+  }
+};
+
 module.exports = {
   getPlaylistSongs,
   addSong,
+  addSongs,
   updateSong,
   deleteSong,
   reorderSongs,
   updateSongSchema,
+  addSongsSchema,
   reorderSongsSchema
 };
