@@ -12,7 +12,7 @@ const createPlaylistSchema = Joi.object({
   description: Joi.string().allow(''),
   tags: Joi.array().items(Joi.string()).max(5),
   coverGradient: Joi.string().max(100),
-  isPublic: Joi.boolean()
+  isPublic: Joi.boolean().default(true)
 });
 
 const updatePlaylistSchema = Joi.object({
@@ -142,7 +142,7 @@ const createPlaylist = async (req, res) => {
       description,
       tags: tags || [],
       coverGradient,
-      isPublic
+      isPublic: isPublic !== undefined ? isPublic : true
     });
 
     await playlist.save();
@@ -176,7 +176,8 @@ const getPlaylist = async (req, res) => {
     }
 
     // Check if private and not owner
-    if (!playlist.isPublic && (!req.user || req.user._id.toString() !== playlist.userId._id.toString())) {
+    // Note: isPublic defaults to true, so only block if explicitly set to false
+    if (playlist.isPublic === false && (!req.user || req.user._id.toString() !== playlist.userId._id.toString())) {
       return res.status(404).json({ error: 'Playlist not found' });
     }
 
