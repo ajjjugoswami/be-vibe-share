@@ -7,7 +7,7 @@ const getNotifications = async (req, res) => {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
     const skip = (page - 1) * limit;
 
-    const query = { userId: req.user.userId };
+    const query = { userId: req.user._id };
     
     if (unreadOnly === 'true') {
       query.isRead = false;
@@ -23,7 +23,7 @@ const getNotifications = async (req, res) => {
 
     const total = await Notification.countDocuments(query);
     const unreadCount = await Notification.countDocuments({ 
-      userId: req.user.userId, 
+      userId: req.user._id, 
       isRead: false 
     });
 
@@ -47,7 +47,7 @@ const getNotifications = async (req, res) => {
 const getUnreadCount = async (req, res) => {
   try {
     const unreadCount = await Notification.countDocuments({
-      userId: req.user.userId,
+      userId: req.user._id,
       isRead: false
     });
 
@@ -65,7 +65,7 @@ const markAsRead = async (req, res) => {
 
     const notification = await Notification.findOne({
       _id: notificationId,
-      userId: req.user.userId
+      userId: req.user._id
     });
 
     if (!notification) {
@@ -86,7 +86,7 @@ const markAsRead = async (req, res) => {
 const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
-      { userId: req.user.userId, isRead: false },
+      { userId: req.user._id, isRead: false },
       { isRead: true }
     );
 
@@ -104,7 +104,7 @@ const deleteNotification = async (req, res) => {
 
     const result = await Notification.deleteOne({
       _id: notificationId,
-      userId: req.user.userId
+      userId: req.user._id
     });
 
     if (result.deletedCount === 0) {

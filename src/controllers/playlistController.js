@@ -445,27 +445,13 @@ const likePlaylist = async (req, res) => {
       { new: true }
     );
 
-    // Create or update notification for playlist owner (upsert to handle re-likes)
-    if (playlist.userId.toString() !== userId.toString()) {
-      const Notification = require('../models/Notification');
-      await Notification.findOneAndUpdate(
-        {
-          userId: playlist.userId,
-          type: 'playlist_like',
-          actorId: userId,
-          playlistId: id
-        },
-        {
-          userId: playlist.userId,
-          type: 'playlist_like',
-          actorId: userId,
-          playlistId: id,
-          isRead: false,
-          createdAt: new Date()
-        },
-        { upsert: true, new: true }
-      ).catch(err => console.error('Notification error:', err));
-    }
+    // Create notification for playlist owner
+    await createNotification({
+      userId: playlist.userId,
+      type: 'playlist_like',
+      actorId: userId,
+      playlistId: id
+    });
 
     console.log('[PLAYLIST_LIKED]', { playlistId: id, userId, timestamp: new Date() });
 
