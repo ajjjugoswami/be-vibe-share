@@ -445,13 +445,27 @@ const likePlaylist = async (req, res) => {
       { new: true }
     );
 
-    // Create notification for playlist owner
-    await createNotification({
-      userId: playlist.userId,
-      type: 'playlist_like',
-      actorId: userId,
-      playlistId: id
-    });
+    // Create or update notification for playlist owner (upsert to handle re-likes)
+    if (playlist.userId.toString() !== userId.toString()) {
+      const Notification = require('../models/Notification');
+      await Notification.findOneAndUpdate(
+        {
+          userId: playlist.userId,
+          type: 'playlist_like',
+          actorId: userId,
+          playlistId: id
+        },
+        {
+          userId: playlist.userId,
+          type: 'playlist_like',
+          actorId: userId,
+          playlistId: id,
+          isRead: false,
+          createdAt: new Date()
+        },
+        { upsert: true, new: true }
+      ).catch(err => console.error('Notification error:', err));
+    }
 
     console.log('[PLAYLIST_LIKED]', { playlistId: id, userId, timestamp: new Date() });
 
@@ -478,6 +492,14 @@ const unlikePlaylist = async (req, res) => {
     if (!like) {
       return res.status(404).json({ error: 'Like not found' });
     }
+
+    // Delete the notification when unliking
+    const Notification = require('../models/Notification');
+    await Notification.findOneAndDelete({
+      type: 'playlist_like',
+      actorId: userId,
+      playlistId: id
+    }).catch(err => console.error('Delete notification error:', err));
 
     // Update playlist likes count
     const updatedPlaylist = await Playlist.findByIdAndUpdate(
