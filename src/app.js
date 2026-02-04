@@ -47,6 +47,7 @@ app.use('/api/playlists', require('./routes/playlists'));
 app.use('/api/feed', require('./routes/feed'));
 app.use('/api/discover', require('./routes/discover'));
 app.use('/api/search', require('./routes/search'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Health check
 app.get('/health', (req, res) => {
