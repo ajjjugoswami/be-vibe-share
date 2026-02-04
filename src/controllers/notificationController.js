@@ -58,30 +58,6 @@ const getUnreadCount = async (req, res) => {
   }
 };
 
-// Mark notification as read
-const markAsRead = async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-
-    const notification = await Notification.findOne({
-      _id: notificationId,
-      userId: req.user._id
-    });
-
-    if (!notification) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
-
-    notification.isRead = true;
-    await notification.save();
-
-    res.json({ message: 'Notification marked as read' });
-  } catch (error) {
-    console.error('Mark as read error:', error);
-    res.status(500).json({ error: 'Failed to mark notification as read' });
-  }
-};
-
 // Mark all notifications as read
 const markAllAsRead = async (req, res) => {
   try {
@@ -150,7 +126,6 @@ const createNotification = async ({ userId, type, actorId, playlistId }) => {
 module.exports = {
   getNotifications,
   getUnreadCount,
-  markAsRead,
   markAllAsRead,
   deleteNotification,
   createNotification

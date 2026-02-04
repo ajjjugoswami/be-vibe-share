@@ -4,7 +4,6 @@ const { authenticate } = require('../middleware/auth');
 const {
   getNotifications,
   getUnreadCount,
-  markAsRead,
   markAllAsRead,
   deleteNotification
 } = require('../controllers/notificationController');
@@ -20,9 +19,6 @@ router.get('/unread-count', getUnreadCount);
 
 // Mark all as read
 router.post('/mark-all-read', markAllAsRead);
-
-// Mark specific notification as read
-router.post('/:notificationId/read', markAsRead);
 
 // Delete notification
 router.delete('/:notificationId', deleteNotification);
